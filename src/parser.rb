@@ -67,7 +67,7 @@ class BlockExpr < Expression
   end
 
   def to_s
-    "BlockExpr(exprs: #{@exprs})"
+    "BlockExpr(exprs: #{@exprs.join(', ')})"
   end
 end
 
