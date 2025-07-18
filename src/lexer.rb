@@ -12,7 +12,7 @@ class Token
 end
 
 class Lexer
-  def initialize(source:)
+  def initialize(source)
     @source = source
     @curr_index = 0
   end

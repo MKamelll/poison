@@ -1,11 +1,20 @@
 require_relative 'lexer'
+require_relative 'parser'
 
-test = '() {} [] function let const "string" 15 12.154 for while return variable'
-lexer = Lexer.new source: test
-token = lexer.next
-until token.type == :eof
-  puts token
-  token = lexer.next
+version = '0.1.0'
+
+puts "welcome to poison #{version}"
+loop do
+  print '> '
+  line = gets.chomp
+  break if line.length <= 0 || line == ':q'
+
+  lexer = Lexer.new line
+  parser = Parser.new lexer
+
+  begin
+    puts parser.parse
+  rescue StandardError => e
+    puts e.message
+  end
 end
-
-puts token
