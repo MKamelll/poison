@@ -1,6 +1,7 @@
 require_relative 'lexer'
 
 class Expression
+  def initialize(*args) end
 end
 
 class PrimaryExpr < Expression
@@ -39,7 +40,7 @@ class BinaryExpr < Expression
   attr_accessor :lhs, :op, :rhs
 
   def initialize(lhs, operator, rhs)
-    super
+    super(lhs, operator, rhs)
     @lhs = lhs
     @operator = operator
     @rhs = rhs
@@ -50,12 +51,43 @@ class BinaryExpr < Expression
   end
 end
 
+class Operator
+  attr_accessor :op, :associativity, :precedence
+
+  def initialize(operator, precedence, associativity)
+    @operator = operator
+    @precedence = precedence
+    @associativity = associativity
+  end
+
+  def to_s
+    "Operator('#{@operator}')"
+  end
+end
+
 class Parser
   def initialize(lexer)
     @lexer = lexer
     @curr_token = lexer.next
     @prev_token = @curr_token
     @parsed_trees = []
+    @allowed_ops = {
+      'or' => Operator.new('or', 0, :left),
+      'and' => Operator.new('and', 0, :left),
+      'not' => Operator.new('not', 0, :left),
+
+      '==' => Operator.new('==', 0, :left),
+      '<' => Operator.new('<', 1, :left),
+      '<=' => Operator.new('<=', 1, :left),
+      '>' => Operator.new('>', 1, :left),
+      '>=' => Operator.new('>', 1, :left),
+
+      '+' => Operator.new('+', 6, :left),
+      '-' => Operator.new('-', 6, :left),
+      '*' => Operator.new('*', 7, :left),
+      '/' => Operator.new('/', 7, :left),
+      '^' => Operator.new('^', 8, :right)
+    }
   end
 
   def advance
@@ -94,8 +126,23 @@ class Parser
     parse
   end
 
-  def parse_expr
-    parse_primary
+  def parse_expr(min_precedence = 0)
+    lhs = parse_primary
+    until at_end?
+      op = curr.lexeme
+      allowed_op = @allowed_ops.key?(op)
+      break if !allowed_op || @allowed_ops[op].precedence < min_precedence
+
+      curr_op = @allowed_ops[op]
+      next_min_precedence = curr_op.precedence
+
+      next_min_precedence += 1 if curr_op.associativity == :right
+      advance
+      rhs = parse_expr(next_min_precedence)
+      lhs = BinaryExpr.new(lhs, op, rhs)
+    end
+
+    lhs
   end
 
   def parse_primary

@@ -73,10 +73,7 @@ class Lexer
       return Token.new(type: :minus, lexeme: '-')
     when '*'
       advance
-      if curr == '*'
-        advance
-        return Token.new(type: :star_star, lexeme: '**')
-      elsif curr == '='
+      if curr == '='
         advance
         return Token.new(type: :star_equal, lexeme: '*=')
       end
@@ -88,6 +85,13 @@ class Lexer
         return Token.new(type: :slash_equal, lexeme: '/=')
       end
       return Token.new(type: :slash, lexeme: '/')
+    when '^'
+      advance
+      if curr == '='
+        advance
+        return Token.new(type: :carrot_equal, lexeme: '^=')
+      end
+      return Token.new(type: :carrot, lexeme: '^')
     when '='
       advance
       if curr == '='
