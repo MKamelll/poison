@@ -36,6 +36,41 @@ class IdentifierExpr < PrimaryExpr
   end
 end
 
+class LetExpr < Expression
+  def initialize(identifier, expr)
+    super(identifier, expr)
+    @identifier = identifier
+    @expr = expr
+  end
+
+  def to_s
+    "LetExpr(identifier: #{@identifier}, expr: #{@expr})"
+  end
+end
+
+class ConstExpr < Expression
+  def initialize(identifier, expr)
+    super(identifier, expr)
+    @identifier = identifier
+    @expr = expr
+  end
+
+  def to_s
+    "ConstExpr(identifier: #{@identifier}, expr: #{@expr})"
+  end
+end
+
+class BlockExpr < Expression
+  def initialize(exprs)
+    super(exprs)
+    @exprs = exprs
+  end
+
+  def to_s
+    "BlockExpr(exprs: #{@exprs})"
+  end
+end
+
 class BinaryExpr < Expression
   attr_accessor :lhs, :op, :rhs
 
@@ -105,6 +140,10 @@ class Parser
     false
   end
 
+  def expected(what)
+    raise "Expected '#{what}' instead got #{prev.lexeme}"
+  end
+
   def prev
     @prev_token
   end
@@ -168,8 +207,49 @@ class Parser
   end
 
   def parse_identifier
-    return IdentifierExpr.new(prev.lexeme) if match(:identifier)
+    IdentifierExpr.new(prev.lexeme) if match(:identifier)
+    parse_let_expr
+  end
 
+  def parse_let_expr
+    if match(:let)
+      expected(:identifier) unless match(:identifier)
+      identifier = prev.lexeme
+      expected('=') unless match(:equal)
+      rhs = parse_expr
+      expected(';') unless match(:semi_colon)
+      return LetExpr.new(identifier, rhs)
+    end
+    parse_const_expr
+  end
+
+  def parse_const_expr
+    if match(:const)
+      expected(:identifier) unless match(:identifier)
+      identifier = prev.lexeme
+      expected('=') unless match(:equal)
+      rhs = parse_expr
+      expected(';') unless match(:semi_colon)
+      return ConstExpr.new(identifier, rhs)
+    end
+    parse_block_expr
+  end
+
+  def parse_block_expr
+    if match(:left_bracket)
+      exprs = []
+      until at_end?
+        break if curr.type == :right_bracket
+
+        exprs << parse_expr
+      end
+      expected('}') unless match(:right_bracket)
+      return BlockExpr.new(exprs)
+    end
+    illegal
+  end
+
+  def illegal
     raise "Expected a primary token instead got '#{curr.lexeme}'"
   end
 end
